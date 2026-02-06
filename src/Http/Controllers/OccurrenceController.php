@@ -36,7 +36,14 @@ class OccurrenceController
             ->first(fn (OccurrenceData $o) => $o->start->isSameDay($date));
 
         if ($cachedOccurrence) {
-            return $this->renderFromCache($entry, $cachedOccurrence);
+            return $this->renderOccurrence($entry, [
+                'start' => $cachedOccurrence->start,
+                'end' => $cachedOccurrence->end,
+                'is_all_day' => $cachedOccurrence->isAllDay,
+                'is_recurring' => $cachedOccurrence->isRecurring,
+                'recurrence_description' => $cachedOccurrence->recurrenceDescription,
+                'occurrence_url' => $cachedOccurrence->url,
+            ]);
         }
 
         $occurrence = $this->resolver->findOccurrenceOnDate($entry, $date);
@@ -45,29 +52,19 @@ class OccurrenceController
             abort(404);
         }
 
-        $data = $entry->toAugmentedArray();
-        $data['start'] = $occurrence->start;
-        $data['end'] = $occurrence->end;
-        $data['is_all_day'] = $occurrence->isAllDay;
-        $data['is_recurring'] = $occurrence->isRecurring;
-        $data['recurrence_description'] = $occurrence->recurrenceDescription;
-        $data['occurrence_url'] = $occurrence->url();
-
-        return (new View)
-            ->template($entry->template())
-            ->layout($entry->layout())
-            ->with($data);
+        return $this->renderOccurrence($entry, [
+            'start' => $occurrence->start,
+            'end' => $occurrence->end,
+            'is_all_day' => $occurrence->isAllDay,
+            'is_recurring' => $occurrence->isRecurring,
+            'recurrence_description' => $occurrence->recurrenceDescription,
+            'occurrence_url' => $occurrence->url(),
+        ]);
     }
 
-    private function renderFromCache($entry, OccurrenceData $occurrence)
+    private function renderOccurrence($entry, array $occurrenceData)
     {
-        $data = $entry->toAugmentedArray();
-        $data['start'] = $occurrence->start;
-        $data['end'] = $occurrence->end;
-        $data['is_all_day'] = $occurrence->isAllDay;
-        $data['is_recurring'] = $occurrence->isRecurring;
-        $data['recurrence_description'] = $occurrence->recurrenceDescription;
-        $data['occurrence_url'] = $occurrence->url;
+        $data = array_merge($entry->toAugmentedArray(), $occurrenceData);
 
         return (new View)
             ->template($entry->template())

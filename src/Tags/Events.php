@@ -83,16 +83,8 @@ class Events extends Tags
     public function forOrganizer(): array
     {
         $organizerId = $this->params->get('organizer') ?? $this->context->get('id');
-        $limit = $this->params->int('limit', 5);
-        $from = Carbon::now();
 
-        return Occurrences::forOrganizer(is_string($organizerId) ? $organizerId : null)
-            ->filter(fn (OccurrenceData $o) => $o->start->gte($from))
-            ->sortBy(fn (OccurrenceData $o) => $o->start)
-            ->take($limit)
-            ->map(fn (OccurrenceData $o) => $this->occurrenceDataToArray($o))
-            ->values()
-            ->all();
+        return $this->upcomingForOrganizer(is_string($organizerId) ? $organizerId : null);
     }
 
     /**
@@ -103,7 +95,7 @@ class Events extends Tags
     {
         $memberId = $this->params->get('member') ?? $this->context->get('id');
 
-        return $this->forOrganizerWithId($memberId);
+        return $this->upcomingForOrganizer(is_string($memberId) ? $memberId : null);
     }
 
     public function nextOccurrences(): array
@@ -132,9 +124,8 @@ class Events extends Tags
         return $occurrences->map(fn (Occurrence $o) => $this->occurrenceToArray($o))->values()->all();
     }
 
-    private function forOrganizerWithId($id): array
+    private function upcomingForOrganizer(?string $organizerId): array
     {
-        $organizerId = is_string($id) ? $id : null;
         $limit = $this->params->int('limit', 5);
         $from = Carbon::now();
 
@@ -183,16 +174,11 @@ class Events extends Tags
         }
 
         return collect($tags)
-            ->map(function ($tag) {
-                if ($tag instanceof Term) {
-                    return $tag->slug();
-                }
-
-                if (is_array($tag)) {
-                    return $tag['slug'] ?? null;
-                }
-
-                return is_string($tag) ? $tag : null;
+            ->map(fn ($tag) => match (true) {
+                $tag instanceof Term => $tag->slug(),
+                is_array($tag) => $tag['slug'] ?? null,
+                is_string($tag) => $tag,
+                default => null,
             })
             ->filter()
             ->values()

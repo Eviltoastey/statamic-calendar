@@ -161,28 +161,27 @@ class OccurrenceResolver
 
     private function buildRruleParams(array $row): array
     {
-        $startDate = (string) $row['start_date'];
+        $frequency = $row['frequency'];
         $startTime = (string) ($row['start_time'] ?? '00:00');
-        $dtstart = $startDate.' '.$startTime;
 
         $params = [
-            'FREQ' => $row['frequency'],
+            'FREQ' => $frequency,
             'INTERVAL' => $row['interval'] ?? 1,
-            'DTSTART' => $dtstart,
+            'DTSTART' => $row['start_date'].' '.$startTime,
         ];
 
-        if (($row['frequency'] ?? null) === 'WEEKLY' && ! empty($row['weekdays'])) {
+        if ($frequency === 'WEEKLY' && ! empty($row['weekdays'])) {
             $params['BYDAY'] = $row['weekdays'];
         }
 
-        if (($row['frequency'] ?? null) === 'MONTHLY' && ($row['monthly_type'] ?? null) === 'weekday_position') {
-            $ordinal = (string) ($row['weekday_ordinal'] ?? '1');
-            $weekday = (string) ($row['weekday'] ?? 'MO');
-            $params['BYDAY'] = $ordinal.$weekday;
-        }
+        if ($frequency === 'MONTHLY') {
+            $monthlyType = $row['monthly_type'] ?? null;
 
-        if (($row['frequency'] ?? null) === 'MONTHLY' && ($row['monthly_type'] ?? null) === 'day_of_month') {
-            $params['BYMONTHDAY'] = $row['monthday'] ?? 1;
+            if ($monthlyType === 'weekday_position') {
+                $params['BYDAY'] = ($row['weekday_ordinal'] ?? '1').($row['weekday'] ?? 'MO');
+            } elseif ($monthlyType === 'day_of_month') {
+                $params['BYMONTHDAY'] = $row['monthday'] ?? 1;
+            }
         }
 
         $recurrenceEnd = $row['recurrence_end'] ?? 'never';

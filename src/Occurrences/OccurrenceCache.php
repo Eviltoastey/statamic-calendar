@@ -103,14 +103,14 @@ class OccurrenceCache
 
         foreach ($entries as $entry) {
             $dates = $entry->get($this->datesField()) ?? [];
-            $startDateKey = 'start_date';
+
             if (empty($dates)) {
                 continue;
             }
 
             $eventFrom = collect($dates)
-                ->filter(fn ($d) => is_array($d) && ! empty($d[$startDateKey]))
-                ->map(fn ($d) => Carbon::parse((string) $d[$startDateKey]))
+                ->filter(fn ($d) => is_array($d) && ! empty($d['start_date']))
+                ->map(fn ($d) => Carbon::parse((string) $d['start_date']))
                 ->sortBy(fn (Carbon $date) => $date->timestamp)
                 ->first();
 
@@ -171,15 +171,24 @@ class OccurrenceCache
      */
     private function extractOrganizerData($entry): array
     {
+        $nullOrganizer = ['id' => null, 'slug' => null, 'title' => null, 'url' => null];
+
         $handle = config('statamic-calendar.fields.organizer.handle');
         if (! $handle) {
-            return ['id' => null, 'slug' => null, 'title' => null, 'url' => null];
+            return $nullOrganizer;
         }
 
         $organizer = $entry->get((string) $handle);
 
         if (! $organizer) {
-            return ['id' => null, 'slug' => null, 'title' => null, 'url' => null];
+            return $nullOrganizer;
+        }
+
+        if (is_string($organizer)) {
+            $organizer = Entry::find($organizer);
+            if (! $organizer) {
+                return array_merge($nullOrganizer, ['id' => $entry->get((string) $handle)]);
+            }
         }
 
         if (is_object($organizer) && method_exists($organizer, 'id') && method_exists($organizer, 'slug')) {
@@ -191,21 +200,7 @@ class OccurrenceCache
             ];
         }
 
-        if (is_string($organizer)) {
-            $organizerEntry = Entry::find($organizer);
-            if ($organizerEntry) {
-                return [
-                    'id' => $organizerEntry->id(),
-                    'slug' => $organizerEntry->slug(),
-                    'title' => $organizerEntry->get('title'),
-                    'url' => $organizerEntry->url(),
-                ];
-            }
-
-            return ['id' => $organizer, 'slug' => null, 'title' => null, 'url' => null];
-        }
-
-        return ['id' => null, 'slug' => null, 'title' => null, 'url' => null];
+        return $nullOrganizer;
     }
 
     /**
@@ -221,20 +216,11 @@ class OccurrenceCache
         }
 
         return collect($tags)
-            ->map(function ($tag) {
-                if (is_string($tag)) {
-                    return $tag;
-                }
-
-                if (is_object($tag) && method_exists($tag, 'slug')) {
-                    return $tag->slug();
-                }
-
-                if (is_array($tag)) {
-                    return $tag['slug'] ?? null;
-                }
-
-                return null;
+            ->map(fn ($tag) => match (true) {
+                is_string($tag) => $tag,
+                is_object($tag) && method_exists($tag, 'slug') => $tag->slug(),
+                is_array($tag) => $tag['slug'] ?? null,
+                default => null,
             })
             ->filter()
             ->values()
