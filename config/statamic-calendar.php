@@ -81,15 +81,15 @@ return [
     */
 
     'url' => [
-        'strategy' => 'date_segments',
-
-        'date_segments' => [
-            'prefix' => 'events',
-        ],
+        'strategy' => 'query_string',
 
         'query_string' => [
             'param' => 'date',
             'format' => 'Y-m-d',
+        ],
+
+        'date_segments' => [
+            'prefix' => 'events',
         ],
     ],
 

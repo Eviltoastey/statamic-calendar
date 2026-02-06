@@ -6,18 +6,14 @@ Recurring events and cached occurrences for Statamic.
 
 - Define complex recurrence patterns using RFC 5545 (RRULE) via `rlanvin/php-rrule`
 - Materialize occurrences into Laravel cache for fast listings
-- Frontend occurrence pages via date-segment URLs
-- Antlers tags for listing and next-occurrences
+- Antlers tags for listing, current occurrence, and next occurrences
+- Two URL strategies: query string (default, Statamic-native) or date segments
 
-## How to Install
-
-You can install this addon via Composer:
+## Installation
 
 ```bash
 composer require el-schneider/statamic-calendar
 ```
-
-## Configuration
 
 Publish the config:
 
@@ -25,61 +21,155 @@ Publish the config:
 php artisan vendor:publish --tag=statamic-calendar
 ```
 
-Key options in `config/statamic-calendar.php`:
+## URL Strategies
 
-- `collection`: event collection handle (default `events`)
-- `fields.*`: map date grid / tag field / organizer field
-- `url.strategy`: `date_segments` or `query_string`
-- `url.date_segments.prefix`: route prefix for occurrence pages
-- `cache.key`: cache key used for materialized occurrences
-- `cache.days_ahead`: how far ahead recurrences are expanded
+The addon supports two strategies for occurrence URLs. Configure in `config/statamic-calendar.php`:
 
-## Occurrence Route
+### Query String (default)
 
-When `url.strategy=date_segments`, occurrences are served at:
+Uses Statamic's native collection routing. The addon doesn't register any routes — your collection config handles everything:
 
-`/{prefix}/{year}/{month}/{day}/{slug}`
+```yaml
+# content/collections/events.yaml
+route: '/events/{slug}'
+```
 
-The route is registered by the addon and named `events.occurrence`.
+Occurrence URLs look like `/events/my-event?date=2025-03-15`.
 
-## Antlers Tags
+### Date Segments (opt-in)
 
-List occurrences:
+For SEO-friendly date-based URLs like `/events/2025/03/15/my-event`. Enable in config:
+
+```php
+'url' => [
+    'strategy' => 'date_segments',
+    'date_segments' => [
+        'prefix' => 'events',
+    ],
+],
+```
+
+The addon registers a route at `/{prefix}/{year}/{month}/{day}/{slug}`.
+
+## Setting Up Templates
+
+### Events Index
+
+Create a page or route that uses the `{{ events }}` tag. For example, add to `routes/web.php`:
+
+```php
+Route::statamic('events', 'events/index', [
+    'title' => 'Upcoming Events',
+]);
+```
+
+Then create `resources/views/events/index.antlers.html`:
 
 ```antlers
-{{ events from="now" to="+1 month" limit="10" }}
-    <a href="{{ url }}">{{ start format="Y-m-d" }} - {{ title }}</a>
+<h1>Upcoming Events</h1>
+
+{{ events from="now" limit="20" }}
+    <a href="{{ url }}">
+        <h2>{{ title }}</h2>
+        <p>{{ start format="l, M j, Y" }}</p>
+        {{ if is_recurring }}
+            <p>{{ recurrence_description }}</p>
+        {{ /if }}
+    </a>
 {{ /events }}
 ```
 
-Filter by tags:
+### Event Show Page
+
+Set the collection template to `events/show`, then create `resources/views/events/show.antlers.html`:
 
 ```antlers
-{{ events event_tags="workshop|outdoor" }}
-    ...
-{{ /events }}
-```
+<h1>{{ title }}</h1>
 
-Next occurrences for an entry:
+{{ events:current_occurrence }}
+    <p>{{ start format="l, F j, Y" }}</p>
+    {{ if !is_all_day }}
+        <p>{{ start format="g:i A" }}{{ if end }} – {{ end format="g:i A" }}{{ /if }}</p>
+    {{ else }}
+        <p>All day</p>
+    {{ /if }}
+    {{ if is_recurring }}
+        <p>Repeats: {{ recurrence_description }}</p>
+    {{ /if }}
+{{ /events:current_occurrence }}
 
-```antlers
-{{ events:next_occurrences :entry="id" from="now" limit="5" }}
-    {{ start format="Y-m-d" }}
+{{ events:next_occurrences :entry="id" limit="5" }}
+    <a href="{{ url }}">{{ start format="M j, Y" }}</a>
 {{ /events:next_occurrences }}
 ```
 
-Occurrences for an organizer (alias: `for_member`):
+The `{{ events:current_occurrence }}` tag reads the `?date=` query parameter and resolves the matching occurrence for the current entry. When using the `date_segments` strategy, the date is extracted from the URL instead.
 
-```antlers
-{{ events:for_organizer :organizer="id" limit="5" }}
-    ...
-{{ /events:for_organizer }}
-{{ events:for_member :member="id" limit="5" }}
-    ...
-{{ /events:for_member }}
-```
+## Antlers Tags
 
-## Cache Rebuild Command
+### `{{ events }}`
+
+Lists occurrences from the cache (or resolves them live for non-default collections).
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `from` | Start date | `now` |
+| `to` | End date | — |
+| `limit` | Max occurrences | — |
+| `collection` | Collection handle | config value |
+| `tags` / `event_tags` | Filter by taxonomy terms | — |
+
+### `{{ events:current_occurrence }}`
+
+Resolves the current occurrence for the entry in context, based on the `?date=` query param. Use as a tag pair — variables available inside:
+
+- `start` — Carbon date
+- `end` — Carbon date (nullable)
+- `is_all_day` — boolean
+- `is_recurring` — boolean
+- `recurrence_description` — human-readable recurrence rule
+- `occurrence_url` — the occurrence URL
+
+### `{{ events:next_occurrences }}`
+
+Lists upcoming occurrences for a specific entry.
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `entry` | Entry ID | current context `id` |
+| `from` | Start date | `now` |
+| `to` | End date | — |
+| `limit` | Max occurrences | `5` |
+
+### `{{ events:for_organizer }}`
+
+Lists upcoming occurrences for an organizer (from cache).
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `organizer` | Organizer entry ID | current context `id` |
+| `limit` | Max occurrences | `5` |
+
+## Configuration
+
+Key options in `config/statamic-calendar.php`:
+
+| Key | Description | Default |
+|-----|-------------|---------|
+| `collection` | Event collection handle | `events` |
+| `fields.dates.handle` | Grid field handle | `dates` |
+| `fields.dates.keys.*` | Sub-field key mapping | 1:1 mapping |
+| `url.strategy` | `query_string` or `date_segments` | `query_string` |
+| `url.query_string.param` | Query parameter name | `date` |
+| `url.date_segments.prefix` | URL prefix for date segments | `events` |
+| `cache.key` | Cache store key | `statamic_calendar.occurrences` |
+| `cache.days_ahead` | Recurrence expansion window | `365` |
+
+## Cache
+
+Occurrences are materialized into Laravel's cache for fast listing. The cache rebuilds automatically when entries are saved or deleted.
+
+Manual rebuild:
 
 ```bash
 php artisan occurrences:rebuild
@@ -87,13 +177,8 @@ php artisan occurrences:rebuild
 
 ## Example Blueprint
 
-This addon ships an example events blueprint (including the recurrence grid).
-Publish it into your project:
+Publish the example events blueprint:
 
 ```bash
 php artisan vendor:publish --tag=statamic-calendar-examples
 ```
-
-## How to Use
-
-Here's where you can explain how to use this wonderful addon.

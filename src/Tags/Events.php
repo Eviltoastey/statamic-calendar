@@ -39,6 +39,45 @@ class Events extends Tags
     }
 
     /**
+     * Resolves the current occurrence for an entry based on a date query param.
+     *
+     * Usage: {{ events:current_occurrence }} ... {{ /events:current_occurrence }}
+     */
+    public function currentOccurrence(): mixed
+    {
+        $param = (string) config('statamic-calendar.url.query_string.param', 'date');
+        $dateString = request()->query($param);
+
+        $entryId = $this->context->get('id');
+
+        if ($entryId instanceof \Statamic\Fields\Value) {
+            $entryId = $entryId->value();
+        }
+
+        $entry = is_string($entryId) ? Entry::find($entryId) : null;
+
+        if (! $entry || ! $dateString) {
+            return '';
+        }
+
+        $date = Carbon::parse((string) $dateString);
+        $occurrence = $this->resolver->findOccurrenceOnDate($entry, $date);
+
+        if (! $occurrence) {
+            return '';
+        }
+
+        return $this->parse([
+            'start' => $occurrence->start,
+            'end' => $occurrence->end,
+            'is_all_day' => $occurrence->isAllDay,
+            'is_recurring' => $occurrence->isRecurring,
+            'recurrence_description' => $occurrence->recurrenceDescription,
+            'occurrence_url' => $occurrence->url(),
+        ]);
+    }
+
+    /**
      * Usage: {{ events:for_organizer :organizer="id" limit="5" }}
      */
     public function forOrganizer(): array

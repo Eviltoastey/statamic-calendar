@@ -14,10 +14,6 @@ use Statamic\Providers\AddonServiceProvider;
 
 class ServiceProvider extends AddonServiceProvider
 {
-    protected $routes = [
-        'web' => __DIR__.'/../routes/web.php',
-    ];
-
     protected $tags = [
         Tags\Events::class,
     ];
@@ -37,6 +33,10 @@ class ServiceProvider extends AddonServiceProvider
 
     public function bootAddon()
     {
+        if (config('statamic-calendar.url.strategy') === 'date_segments') {
+            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        }
+
         $this->publishes([
             __DIR__.'/../config/statamic-calendar.php' => config_path('statamic-calendar.php'),
         ], 'statamic-calendar');
