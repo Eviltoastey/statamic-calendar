@@ -7,7 +7,7 @@ namespace ElSchneider\StatamicCalendar\Occurrences;
 use Carbon\Carbon;
 
 /**
- * Immutable DTO representing a cached event occurrence.
+ * Immutable DTO representing a cached occurrence.
  */
 readonly class OccurrenceData
 {
@@ -17,7 +17,7 @@ readonly class OccurrenceData
      */
     public function __construct(
         public string $id,
-        public string $eventId,
+        public string $entryId,
         public string $title,
         public string $slug,
         public ?string $teaser,
@@ -38,7 +38,7 @@ readonly class OccurrenceData
     {
         return new self(
             id: $data['id'],
-            eventId: $data['event_id'],
+            entryId: $data['entry_id'],
             title: $data['title'],
             slug: $data['slug'],
             teaser: $data['teaser'] ?? null,
@@ -46,7 +46,7 @@ readonly class OccurrenceData
             organizerSlug: $data['organizer_slug'] ?? null,
             organizerTitle: $data['organizer_title'] ?? null,
             organizerUrl: $data['organizer_url'] ?? null,
-            tags: $data['tags'] ?? ($data['event_tags'] ?? []),
+            tags: $data['tags'] ?? [],
             start: Carbon::parse($data['start']),
             end: ! empty($data['end']) ? Carbon::parse($data['end']) : null,
             isAllDay: (bool) $data['is_all_day'],
@@ -60,7 +60,7 @@ readonly class OccurrenceData
     {
         return [
             'id' => $this->id,
-            'event_id' => $this->eventId,
+            'entry_id' => $this->entryId,
             'title' => $this->title,
             'slug' => $this->slug,
             'teaser' => $this->teaser,

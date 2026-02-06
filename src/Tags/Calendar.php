@@ -14,9 +14,9 @@ use Statamic\Facades\Entry;
 use Statamic\Stache\Query\TermQueryBuilder;
 use Statamic\Tags\Tags;
 
-class Events extends Tags
+class Calendar extends Tags
 {
-    protected static $handle = 'events';
+    protected static $handle = 'calendar';
 
     public function __construct(
         protected OccurrenceResolver $resolver
@@ -25,23 +25,24 @@ class Events extends Tags
     public function index(): array
     {
         $collection = (string) $this->params->get('collection', config('statamic-calendar.collection', 'events'));
-        $from = Carbon::parse((string) $this->params->get('from', 'now'));
+        $from = $this->params->has('from') ? Carbon::parse((string) $this->params->get('from')) : Carbon::now();
         $to = $this->params->has('to') ? Carbon::parse((string) $this->params->get('to')) : null;
         $limit = $this->params->int('limit');
+        $sort = (string) $this->params->get('sort', 'asc');
 
-        $tags = $this->params->get('tags') ?? $this->params->get('event_tags');
+        $tags = $this->params->get('tags');
 
         if ($collection === config('statamic-calendar.collection', 'events')) {
-            return $this->indexFromCache($from, $to, $limit, $tags);
+            return $this->indexFromCache($from, $to, $limit, $tags, $sort);
         }
 
-        return $this->indexFromResolver($collection, $from, $to, $limit, $tags);
+        return $this->indexFromResolver($collection, $from, $to, $limit, $tags, $sort);
     }
 
     /**
      * Resolves the current occurrence for an entry based on a date query param.
      *
-     * Usage: {{ events:current_occurrence }} ... {{ /events:current_occurrence }}
+     * Usage: {{ calendar:current_occurrence }} ... {{ /calendar:current_occurrence }}
      */
     public function currentOccurrence(): mixed
     {
@@ -78,24 +79,21 @@ class Events extends Tags
     }
 
     /**
-     * Usage: {{ events:for_organizer :organizer="id" limit="5" }}
+     * Usage: {{ calendar:for_organizer :organizer="id" limit="5" }}
      */
     public function forOrganizer(): array
     {
         $organizerId = $this->params->get('organizer') ?? $this->context->get('id');
+        $limit = $this->params->int('limit', 5);
+        $from = Carbon::now();
 
-        return $this->upcomingForOrganizer(is_string($organizerId) ? $organizerId : null);
-    }
-
-    /**
-     * Backwards compatible alias.
-     * Usage: {{ events:for_member :member="id" limit="5" }}
-     */
-    public function forMember(): array
-    {
-        $memberId = $this->params->get('member') ?? $this->context->get('id');
-
-        return $this->upcomingForOrganizer(is_string($memberId) ? $memberId : null);
+        return Occurrences::forOrganizer(is_string($organizerId) ? $organizerId : null)
+            ->filter(fn (OccurrenceData $o) => $o->start->gte($from))
+            ->sortBy(fn (OccurrenceData $o) => $o->start)
+            ->take($limit)
+            ->map(fn (OccurrenceData $o) => $this->occurrenceDataToArray($o))
+            ->values()
+            ->all();
     }
 
     public function nextOccurrences(): array
@@ -124,21 +122,7 @@ class Events extends Tags
         return $occurrences->map(fn (Occurrence $o) => $this->occurrenceToArray($o))->values()->all();
     }
 
-    private function upcomingForOrganizer(?string $organizerId): array
-    {
-        $limit = $this->params->int('limit', 5);
-        $from = Carbon::now();
-
-        return Occurrences::forOrganizer($organizerId)
-            ->filter(fn (OccurrenceData $o) => $o->start->gte($from))
-            ->sortBy(fn (OccurrenceData $o) => $o->start)
-            ->take($limit)
-            ->map(fn (OccurrenceData $o) => $this->occurrenceDataToArray($o))
-            ->values()
-            ->all();
-    }
-
-    private function indexFromCache(Carbon $from, ?Carbon $to, ?int $limit, $tags): array
+    private function indexFromCache(Carbon $from, ?Carbon $to, ?int $limit, $tags, string $sort = 'asc'): array
     {
         $occurrences = Occurrences::all()
             ->filter(fn (OccurrenceData $o) => $o->start->gte($from))
@@ -151,7 +135,9 @@ class Events extends Tags
             }
         }
 
-        $occurrences = $occurrences->sortBy(fn (OccurrenceData $o) => $o->start);
+        $occurrences = $sort === 'desc'
+            ? $occurrences->sortByDesc(fn (OccurrenceData $o) => $o->start)
+            : $occurrences->sortBy(fn (OccurrenceData $o) => $o->start);
 
         if ($limit) {
             $occurrences = $occurrences->take($limit);
@@ -174,18 +160,23 @@ class Events extends Tags
         }
 
         return collect($tags)
-            ->map(fn ($tag) => match (true) {
-                $tag instanceof Term => $tag->slug(),
-                is_array($tag) => $tag['slug'] ?? null,
-                is_string($tag) => $tag,
-                default => null,
+            ->map(function ($tag) {
+                if ($tag instanceof Term) {
+                    return $tag->slug();
+                }
+
+                if (is_array($tag)) {
+                    return $tag['slug'] ?? null;
+                }
+
+                return is_string($tag) ? $tag : null;
             })
             ->filter()
             ->values()
             ->all();
     }
 
-    private function indexFromResolver(string $collection, Carbon $from, ?Carbon $to, ?int $limit, $tags): array
+    private function indexFromResolver(string $collection, Carbon $from, ?Carbon $to, ?int $limit, $tags, string $sort = 'asc'): array
     {
         $query = Entry::query()->where('collection', $collection);
 
@@ -210,7 +201,9 @@ class Events extends Tags
             $allOccurrences = $allOccurrences->merge($occurrences);
         }
 
-        $allOccurrences = $allOccurrences->sortBy(fn (Occurrence $o) => $o->start);
+        $allOccurrences = $sort === 'desc'
+            ? $allOccurrences->sortByDesc(fn (Occurrence $o) => $o->start)
+            : $allOccurrences->sortBy(fn (Occurrence $o) => $o->start);
 
         if ($limit) {
             $allOccurrences = $allOccurrences->take($limit);
@@ -238,7 +231,7 @@ class Events extends Tags
 
     private function occurrenceToArray(Occurrence $occurrence): array
     {
-        $augmented = $occurrence->event->toAugmentedArray();
+        $augmented = $occurrence->entry->toAugmentedArray();
 
         return array_merge($augmented, [
             'start' => $occurrence->start,
@@ -253,7 +246,7 @@ class Events extends Tags
     private function occurrenceDataToArray(OccurrenceData $occurrence): array
     {
         return [
-            'id' => $occurrence->eventId,
+            'id' => $occurrence->entryId,
             'title' => $occurrence->title,
             'slug' => $occurrence->slug,
             'teaser' => $occurrence->teaser,

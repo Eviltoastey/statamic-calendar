@@ -11,7 +11,7 @@ use Throwable;
 class Occurrence
 {
     public function __construct(
-        public readonly Entry $event,
+        public readonly Entry $entry,
         public readonly Carbon $start,
         public readonly ?Carbon $end,
         public readonly bool $isAllDay,
@@ -27,12 +27,12 @@ class Occurrence
             $param = (string) $this->cfg('statamic-calendar.url.query_string.param', 'date');
             $format = (string) $this->cfg('statamic-calendar.url.query_string.format', 'Y-m-d');
 
-            $separator = str_contains($this->event->url(), '?') ? '&' : '?';
+            $separator = str_contains($this->entry->url(), '?') ? '&' : '?';
 
-            return $this->event->url().$separator.urlencode($param).'='.urlencode($this->start->format($format));
+            return $this->entry->url().$separator.urlencode($param).'='.urlencode($this->start->format($format));
         }
 
-        $prefix = mb_trim((string) $this->cfg('statamic-calendar.url.date_segments.prefix', 'events'), '/');
+        $prefix = mb_trim((string) $this->cfg('statamic-calendar.url.date_segments.prefix', 'calendar'), '/');
 
         return sprintf(
             '/%s/%s/%s/%s/%s',
@@ -40,7 +40,7 @@ class Occurrence
             $this->start->format('Y'),
             $this->start->format('m'),
             $this->start->format('d'),
-            $this->event->slug()
+            $this->entry->slug()
         );
     }
 

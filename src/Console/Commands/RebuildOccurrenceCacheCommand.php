@@ -11,7 +11,7 @@ class RebuildOccurrenceCacheCommand extends Command
 {
     protected $signature = 'occurrences:rebuild';
 
-    protected $description = 'Rebuild the occurrence cache from event entries';
+    protected $description = 'Rebuild the occurrence cache';
 
     public function handle(): int
     {

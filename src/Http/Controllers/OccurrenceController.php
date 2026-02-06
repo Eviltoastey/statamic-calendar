@@ -32,7 +32,7 @@ class OccurrenceController
 
         $date = Carbon::create($year, $month, $day);
 
-        $cachedOccurrence = Occurrences::forEvent($entry->id())
+        $cachedOccurrence = Occurrences::forEntry($entry->id())
             ->first(fn (OccurrenceData $o) => $o->start->isSameDay($date));
 
         if ($cachedOccurrence) {

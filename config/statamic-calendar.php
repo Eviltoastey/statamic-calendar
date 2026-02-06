@@ -5,10 +5,10 @@ declare(strict_types=1);
 return [
     /*
     |--------------------------------------------------------------------------
-    | Event Source
+    | Source Collection
     |--------------------------------------------------------------------------
     |
-    | The Statamic collection handle that contains your event entries.
+    | The Statamic collection handle that contains your calendar entries.
     |
     */
 
@@ -20,13 +20,13 @@ return [
     |--------------------------------------------------------------------------
     |
     | Configure how the addon reads dates, taxonomy tags, and the organizer
-    | relation from an event entry.
+    | relation from an entry.
     |
     */
 
     'fields' => [
         /*
-        | The grid field handle on event entries that contains the dates.
+        | The grid field handle on entries that contains the dates.
         | Sub-field handles (start_date, start_time, etc.) are fixed —
         | use the provided example blueprint as a starting point.
         */
@@ -40,7 +40,7 @@ return [
         ],
 
         /*
-        | A relationship field on the event entry (eg. entries field).
+        | A relationship field on the entry (eg. entries field).
         | If null, organizer data won't be cached.
         */
         'organizer' => [
@@ -67,7 +67,7 @@ return [
         ],
 
         'date_segments' => [
-            'prefix' => 'events',
+            'prefix' => 'calendar',
         ],
     ],
 

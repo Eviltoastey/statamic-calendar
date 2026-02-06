@@ -124,7 +124,7 @@ class OccurrenceResolver
             }
 
             $occurrences->push(new Occurrence(
-                event: $entry,
+                entry: $entry,
                 start: $start,
                 end: $end,
                 isAllDay: (bool) ($row['is_all_day'] ?? false),
@@ -210,7 +210,7 @@ class OccurrenceResolver
 
         return collect([
             new Occurrence(
-                event: $entry,
+                entry: $entry,
                 start: $start,
                 end: $end,
                 isAllDay: (bool) ($row['is_all_day'] ?? false),

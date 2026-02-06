@@ -50,10 +50,10 @@ class OccurrenceCache
     /**
      * @return Collection<int, OccurrenceData>
      */
-    public function forEvent(string $eventId): Collection
+    public function forEntry(string $entryId): Collection
     {
         return $this->all()->filter(
-            fn (OccurrenceData $o) => $o->eventId === $eventId
+            fn (OccurrenceData $o) => $o->entryId === $entryId
         )->values();
     }
 
@@ -125,7 +125,7 @@ class OccurrenceCache
             foreach ($eventOccurrences as $occurrence) {
                 $occurrences->push([
                     'id' => $entry->id().'-'.$occurrence->start->format('Y-m-d-His'),
-                    'event_id' => $entry->id(),
+                    'entry_id' => $entry->id(),
                     'title' => (string) $entry->get('title'),
                     'slug' => $entry->slug(),
                     'teaser' => $this->extractTeaser($entry),

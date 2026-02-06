@@ -38,13 +38,13 @@ Occurrence URLs look like `/events/my-event?date=2025-03-15`.
 
 ### Date Segments (opt-in)
 
-For SEO-friendly date-based URLs like `/events/2025/03/15/my-event`. Enable in config:
+For SEO-friendly date-based URLs like `/calendar/2025/03/15/my-event`. Enable in config:
 
 ```php
 'url' => [
     'strategy' => 'date_segments',
     'date_segments' => [
-        'prefix' => 'events',
+        'prefix' => 'calendar',
     ],
 ],
 ```
@@ -55,7 +55,7 @@ The addon registers a route at `/{prefix}/{year}/{month}/{day}/{slug}`.
 
 ### Events Index
 
-Create a page or route that uses the `{{ events }}` tag. For example, add to `routes/web.php`:
+Create a page or route that uses the `{{ calendar }}` tag. For example, add to `routes/web.php`:
 
 ```php
 Route::statamic('events', 'events/index', [
@@ -68,7 +68,7 @@ Then create `resources/views/events/index.antlers.html`:
 ```antlers
 <h1>Upcoming Events</h1>
 
-{{ events from="now" limit="20" }}
+{{ calendar from="now" limit="20" }}
     <a href="{{ url }}">
         <h2>{{ title }}</h2>
         <p>{{ start format="l, M j, Y" }}</p>
@@ -76,7 +76,7 @@ Then create `resources/views/events/index.antlers.html`:
             <p>{{ recurrence_description }}</p>
         {{ /if }}
     </a>
-{{ /events }}
+{{ /calendar }}
 ```
 
 ### Event Show Page
@@ -86,7 +86,7 @@ Set the collection template to `events/show`, then create `resources/views/event
 ```antlers
 <h1>{{ title }}</h1>
 
-{{ events:current_occurrence }}
+{{ calendar:current_occurrence }}
     <p>{{ start format="l, F j, Y" }}</p>
     {{ if !is_all_day }}
         <p>{{ start format="g:i A" }}{{ if end }} – {{ end format="g:i A" }}{{ /if }}</p>
@@ -96,18 +96,18 @@ Set the collection template to `events/show`, then create `resources/views/event
     {{ if is_recurring }}
         <p>Repeats: {{ recurrence_description }}</p>
     {{ /if }}
-{{ /events:current_occurrence }}
+{{ /calendar:current_occurrence }}
 
-{{ events:next_occurrences :entry="id" limit="5" }}
+{{ calendar:next_occurrences :entry="id" limit="5" }}
     <a href="{{ url }}">{{ start format="M j, Y" }}</a>
-{{ /events:next_occurrences }}
+{{ /calendar:next_occurrences }}
 ```
 
-The `{{ events:current_occurrence }}` tag reads the `?date=` query parameter and resolves the matching occurrence for the current entry. When using the `date_segments` strategy, the date is extracted from the URL instead.
+The `{{ calendar:current_occurrence }}` tag reads the `?date=` query parameter and resolves the matching occurrence for the current entry. When using the `date_segments` strategy, the date is extracted from the URL instead.
 
 ## Antlers Tags
 
-### `{{ events }}`
+### `{{ calendar }}`
 
 Lists occurrences from the cache (or resolves them live for non-default collections).
 
@@ -117,9 +117,9 @@ Lists occurrences from the cache (or resolves them live for non-default collecti
 | `to` | End date | — |
 | `limit` | Max occurrences | — |
 | `collection` | Collection handle | config value |
-| `tags` / `event_tags` | Filter by taxonomy terms | — |
+| `tags` | Filter by taxonomy terms | — |
 
-### `{{ events:current_occurrence }}`
+### `{{ calendar:current_occurrence }}`
 
 Resolves the current occurrence for the entry in context, based on the `?date=` query param. Use as a tag pair — variables available inside:
 
@@ -130,7 +130,7 @@ Resolves the current occurrence for the entry in context, based on the `?date=` 
 - `recurrence_description` — human-readable recurrence rule
 - `occurrence_url` — the occurrence URL
 
-### `{{ events:next_occurrences }}`
+### `{{ calendar:next_occurrences }}`
 
 Lists upcoming occurrences for a specific entry.
 
@@ -141,7 +141,7 @@ Lists upcoming occurrences for a specific entry.
 | `to` | End date | — |
 | `limit` | Max occurrences | `5` |
 
-### `{{ events:for_organizer }}`
+### `{{ calendar:for_organizer }}`
 
 Lists upcoming occurrences for an organizer (from cache).
 
@@ -156,12 +156,11 @@ Key options in `config/statamic-calendar.php`:
 
 | Key | Description | Default |
 |-----|-------------|---------|
-| `collection` | Event collection handle | `events` |
-| `fields.dates.handle` | Grid field handle | `dates` |
-| `fields.dates.keys.*` | Sub-field key mapping | 1:1 mapping |
+| `collection` | Source collection handle | `events` |
+| `fields.dates` | Grid field handle | `dates` |
 | `url.strategy` | `query_string` or `date_segments` | `query_string` |
 | `url.query_string.param` | Query parameter name | `date` |
-| `url.date_segments.prefix` | URL prefix for date segments | `events` |
+| `url.date_segments.prefix` | URL prefix for date segments | `calendar` |
 | `cache.key` | Cache store key | `statamic_calendar.occurrences` |
 | `cache.days_ahead` | Recurrence expansion window | `365` |
 
@@ -177,7 +176,7 @@ php artisan occurrences:rebuild
 
 ## Example Blueprint
 
-Publish the example events blueprint:
+Publish the example blueprint:
 
 ```bash
 php artisan vendor:publish --tag=statamic-calendar-examples
