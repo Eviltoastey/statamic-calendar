@@ -119,6 +119,20 @@ Lists occurrences from the cache (or resolves them live for non-default collecti
 | `collection` | Collection handle | config value |
 | `tags` | Filter by taxonomy terms | — |
 
+### `{{ calendar:month }}`
+
+Renders a month grid with weeks, days, and occurrences. Navigation via query params, fully server-rendered. See the example index template for usage.
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `param` | Query string parameter name (allows multiple calendars per page) | `month` |
+| `week_starts_on` | Day of week (`0` = Sunday, `1` = Monday) | `1` |
+| `fixed_rows` | Always render 6 rows for consistent grid height | `false` |
+| `collection` | Collection handle | config value |
+| `tags` | Filter by taxonomy terms | — |
+
+Variables available inside the tag pair: `month_label`, `year`, `month`, `prev_url`, `next_url`, `today`, `day_labels` (loop with `label`, `full_label`), and `weeks` → `days` → `date`, `day`, `is_current_month`, `is_today`, `occurrences`.
+
 ### `{{ calendar:current_occurrence }}`
 
 Resolves the current occurrence for the entry in context, based on the `?date=` query param. Use as a tag pair — variables available inside:
