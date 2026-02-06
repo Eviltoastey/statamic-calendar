@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+if (config('statamic-calendar.url.strategy') !== 'date_segments') {
+    return;
+}
+
 use ElSchneider\StatamicCalendar\Http\Controllers\OccurrenceController;
 use Illuminate\Support\Facades\Route;
 

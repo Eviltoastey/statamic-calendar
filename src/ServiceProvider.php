@@ -33,10 +33,6 @@ class ServiceProvider extends AddonServiceProvider
 
     public function bootAddon()
     {
-        if (config('statamic-calendar.url.strategy') === 'date_segments') {
-            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-        }
-
         $this->app['view']->addLocation(__DIR__.'/../resources/views');
 
         $this->publishes([
