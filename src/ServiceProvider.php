@@ -7,7 +7,6 @@ namespace ElSchneider\StatamicCalendar;
 use ElSchneider\StatamicCalendar\Console\Commands\RebuildOccurrenceCacheCommand;
 use ElSchneider\StatamicCalendar\Listeners\RebuildOccurrenceCacheOnEntryChange;
 use ElSchneider\StatamicCalendar\Occurrences\OccurrenceCache;
-use Illuminate\Support\Facades\Event;
 use Statamic\Events\EntryDeleted;
 use Statamic\Events\EntrySaved;
 use Statamic\Providers\AddonServiceProvider;
@@ -20,6 +19,11 @@ class ServiceProvider extends AddonServiceProvider
 
     protected $commands = [
         RebuildOccurrenceCacheCommand::class,
+    ];
+
+    protected $listen = [
+        EntrySaved::class => [RebuildOccurrenceCacheOnEntryChange::class],
+        EntryDeleted::class => [RebuildOccurrenceCacheOnEntryChange::class],
     ];
 
     public function register(): void
@@ -46,8 +50,5 @@ class ServiceProvider extends AddonServiceProvider
         $this->publishes([
             __DIR__.'/../resources/examples' => resource_path('vendor/statamic-calendar/examples'),
         ], 'statamic-calendar-examples');
-
-        Event::listen(EntrySaved::class, RebuildOccurrenceCacheOnEntryChange::class);
-        Event::listen(EntryDeleted::class, RebuildOccurrenceCacheOnEntryChange::class);
     }
 }
