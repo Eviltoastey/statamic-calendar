@@ -6,8 +6,10 @@ Recurring events and cached occurrences for Statamic.
 
 - Define complex recurrence patterns using RFC 5545 (RRULE) via `rlanvin/php-rrule`
 - Materialize occurrences into Laravel cache for fast listings
-- Antlers tags for listing, current occurrence, and next occurrences
+- Antlers tags for listing, current occurrence, next occurrences, and month grid
+- Month calendar view — server-rendered, navigable via query params, no JS required
 - Two URL strategies: query string (default, Statamic-native) or date segments
+- Example templates for index (list, archive, calendar grid) and show pages
 
 ## Installation
 

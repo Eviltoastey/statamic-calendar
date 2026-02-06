@@ -8,6 +8,10 @@ This addon is **unpublished** — there are no external consumers yet. Backwards
 
 > **Remove this section when drafting the first release.**
 
+## Guidelines
+
+- Prefer inline documentation (docblocks, config comments, example templates) over README. The README should point to sources, not duplicate them.
+
 ## Sandboxes
 
 - **v5**: `http://statamic-calendar-test.test`
