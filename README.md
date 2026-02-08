@@ -8,6 +8,7 @@ Recurring events and cached occurrences for Statamic.
 - Materialize occurrences into Laravel cache for fast listings
 - Antlers tags for listing, current occurrence, next occurrences, and month grid
 - Month calendar view — server-rendered, navigable via query params, no JS required
+- JSON REST API for JS-based calendar components (opt-in)
 - iCalendar (.ics) feed for calendar app subscriptions + per-event "Add to calendar" downloads
 - Two URL strategies: query string (default, Statamic-native) or date segments
 - Example templates for index (list, archive, calendar grid) and show pages
@@ -90,6 +91,87 @@ The addon exposes an .ics feed that calendar apps (Apple Calendar, Google Calend
   </a>
 {{ /calendar }}
 ```
+
+## REST API
+
+An opt-in JSON API for occurrences, designed for JS-based calendar components (FullCalendar, Toast UI Calendar, custom Alpine/Vue/React widgets, etc.) that build their view client-side.
+
+### Enable
+
+Set the env var or publish the config:
+
+```env
+STATAMIC_CALENDAR_API_ENABLED=true
+```
+
+```php
+// config/statamic-calendar.php
+'api' => [
+    'enabled' => env('STATAMIC_CALENDAR_API_ENABLED', false),
+    'route' => env('STATAMIC_CALENDAR_API_ROUTE', 'api/calendar/occurrences'),
+    'middleware' => env('STATAMIC_CALENDAR_API_MIDDLEWARE', 'api'),
+],
+```
+
+### Endpoint
+
+`GET /api/calendar/occurrences`
+
+| Parameter   | Type     | Description                     | Default |
+| ----------- | -------- | ------------------------------- | ------- |
+| `from`      | `date`   | Start date (ISO 8601 or `Y-m-d`) | now     |
+| `to`        | `date`   | End date                        | —       |
+| `limit`     | `int`    | Max occurrences                 | —       |
+| `sort`      | `string` | `asc` or `desc`                 | `asc`   |
+| `tags`      | `string` | Comma-separated tag slugs       | —       |
+| `organizer` | `string` | Organizer entry ID              | —       |
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "id": "abc-123-2026-03-06-150000",
+      "entry_id": "abc-123",
+      "title": "Laracon Online",
+      "slug": "laracon-online",
+      "teaser": "The best Laravel conference",
+      "organizer_id": "org-456",
+      "organizer_slug": "laravel-org",
+      "organizer_title": "Laravel",
+      "organizer_url": "/organizers/laravel-org",
+      "tags": ["tech", "laravel"],
+      "start": "2026-03-06T15:00:00+00:00",
+      "end": "2026-03-06T16:00:00+00:00",
+      "is_all_day": false,
+      "is_recurring": true,
+      "recurrence_description": "every week on Friday",
+      "url": "/events/laracon-online?date=2026-03-06"
+    }
+  ]
+}
+```
+
+### Examples
+
+```js
+// Month view
+fetch('/api/calendar/occurrences?from=2026-03-01&to=2026-03-31')
+
+// Week view
+fetch('/api/calendar/occurrences?from=2026-03-02&to=2026-03-08')
+
+// Next 5 upcoming
+fetch('/api/calendar/occurrences?limit=5')
+
+// Filtered by tag and organizer
+fetch('/api/calendar/occurrences?tags=music,art&organizer=org-123')
+```
+
+### CORS
+
+The API uses Laravel's `api` middleware group, so cross-origin requests are handled by your app's `config/cors.php`. Laravel's default config already allows `api/*` paths from all origins — adjust as needed.
 
 ## Setting Up Templates
 
@@ -240,6 +322,9 @@ Key options in `config/statamic-calendar.php`:
 | `url.strategy`             | `query_string` or `date_segments` | `query_string`                  |
 | `url.query_string.param`   | Query parameter name              | `date`                          |
 | `url.date_segments.prefix` | URL prefix for date segments      | `calendar`                      |
+| `api.enabled`              | Enable JSON REST API              | `false`                         |
+| `api.route`                | API route path                    | `api/calendar/occurrences`      |
+| `api.middleware`           | Middleware group                  | `api`                           |
 | `ics.enabled`              | Enable .ics feed routes           | `true`                          |
 | `ics.feed_url`             | Feed URL path                     | `/calendar.ics`                 |
 | `ics.calendar_name`        | Calendar name in .ics output      | `APP_NAME`                      |
