@@ -90,6 +90,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | iCalendar (.ics) Export
+    |--------------------------------------------------------------------------
+    |
+    | Expose an .ics feed that calendar apps (Apple Calendar, Google Calendar,
+    | Outlook) can subscribe to, plus per-occurrence download links for
+    | "Add to calendar" buttons.
+    |
+    */
+
+    'ics' => [
+        'enabled' => true,
+        'feed_url' => '/calendar.ics',
+        'calendar_name' => env('APP_NAME', 'Calendar'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache
     |--------------------------------------------------------------------------
     |

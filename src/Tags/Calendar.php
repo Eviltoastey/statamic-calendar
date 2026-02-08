@@ -9,6 +9,7 @@ use ElSchneider\StatamicCalendar\Facades\Occurrences;
 use ElSchneider\StatamicCalendar\Occurrences\Occurrence;
 use ElSchneider\StatamicCalendar\Occurrences\OccurrenceData;
 use ElSchneider\StatamicCalendar\Occurrences\OccurrenceResolver;
+use Illuminate\Support\Facades\URL;
 use Statamic\Contracts\Taxonomies\Term;
 use Statamic\Facades\Entry;
 use Statamic\Stache\Query\TermQueryBuilder;
@@ -94,6 +95,31 @@ class Calendar extends Tags
             ->map(fn (OccurrenceData $o) => $this->occurrenceDataToArray($o))
             ->values()
             ->all();
+    }
+
+    /**
+     * Returns the URL to the .ics calendar feed.
+     *
+     * Usage: {{ calendar:ics_url }}
+     */
+    public function icsUrl(): string
+    {
+        return URL::route('statamic-calendar.ics.feed');
+    }
+
+    /**
+     * Returns the .ics download URL for a single occurrence.
+     *
+     * Usage: {{ calendar:ics_download_url :occurrence_id="id" }}
+     *
+     * The occurrence ID follows the format "{entry_id}-{Y-m-d-His}",
+     * which is available as `id` in any `{{ calendar }}` loop.
+     */
+    public function icsDownloadUrl(): string
+    {
+        $id = (string) ($this->params->get('occurrence_id') ?? $this->context->get('id'));
+
+        return URL::route('statamic-calendar.ics.download', $id);
     }
 
     /**

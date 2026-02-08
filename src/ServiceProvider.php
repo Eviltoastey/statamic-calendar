@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ElSchneider\StatamicCalendar;
 
 use ElSchneider\StatamicCalendar\Console\Commands\RebuildOccurrenceCacheCommand;
+use ElSchneider\StatamicCalendar\Http\Controllers\IcsController;
 use ElSchneider\StatamicCalendar\Listeners\RebuildOccurrenceCacheOnEntryChange;
 use ElSchneider\StatamicCalendar\Occurrences\OccurrenceCache;
 use Illuminate\Support\Facades\Route;
@@ -62,5 +63,22 @@ class ServiceProvider extends AddonServiceProvider
         if ($index) {
             Route::statamic($index, 'statamic-calendar/index');
         }
+
+        $this->registerIcsRoutes();
+    }
+
+    protected function registerIcsRoutes(): void
+    {
+        if (! config('statamic-calendar.ics.enabled', true)) {
+            return;
+        }
+
+        $feedPath = config('statamic-calendar.ics.feed_url', '/calendar.ics');
+
+        Route::get($feedPath, [IcsController::class, 'feed'])
+            ->name('statamic-calendar.ics.feed');
+
+        Route::get($feedPath.'/{occurrenceId}', [IcsController::class, 'download'])
+            ->name('statamic-calendar.ics.download');
     }
 }
