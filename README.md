@@ -1,3 +1,5 @@
+<img src="images/ca_banner.png" alt="Statamic Calendar">
+
 # Statamic Calendar
 
 Recurring events and cached occurrences for Statamic.
