@@ -37,12 +37,12 @@ readonly class OccurrenceData
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
-            entryId: $data['entry_id'],
+            id: (string) $data['id'],
+            entryId: (string) $data['entry_id'],
             title: $data['title'],
             slug: $data['slug'],
             teaser: $data['teaser'] ?? null,
-            organizerId: $data['organizer_id'] ?? null,
+            organizerId: isset($data['organizer_id']) ? (string) $data['organizer_id'] : null,
             organizerSlug: $data['organizer_slug'] ?? null,
             organizerTitle: $data['organizer_title'] ?? null,
             organizerUrl: $data['organizer_url'] ?? null,

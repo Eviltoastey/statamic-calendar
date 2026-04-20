@@ -50,8 +50,10 @@ class OccurrenceCache
     /**
      * @return Collection<int, OccurrenceData>
      */
-    public function forEntry(string $entryId): Collection
+    public function forEntry(string|int $entryId): Collection
     {
+        $entryId = (string) $entryId;
+
         return $this->all()->filter(
             fn (OccurrenceData $o) => $o->entryId === $entryId
         )->values();
@@ -120,12 +122,13 @@ class OccurrenceCache
 
             $eventOccurrences = $resolver->resolve($entry, $eventFrom, $to);
 
+            $entryId = (string) $entry->id();
             $organizerData = $this->extractOrganizerData($entry);
 
             foreach ($eventOccurrences as $occurrence) {
                 $occurrences->push([
-                    'id' => $entry->id().'-'.$occurrence->start->format('Y-m-d-His'),
-                    'entry_id' => $entry->id(),
+                    'id' => $entryId.'-'.$occurrence->start->format('Y-m-d-His'),
+                    'entry_id' => $entryId,
                     'title' => (string) $entry->get('title'),
                     'slug' => $entry->slug(),
                     'teaser' => $this->extractTeaser($entry),
@@ -187,13 +190,13 @@ class OccurrenceCache
         if (is_string($organizer)) {
             $organizer = Entry::find($organizer);
             if (! $organizer) {
-                return array_merge($nullOrganizer, ['id' => $entry->get((string) $handle)]);
+                return array_merge($nullOrganizer, ['id' => (string) $entry->get((string) $handle)]);
             }
         }
 
         if (is_object($organizer) && method_exists($organizer, 'id') && method_exists($organizer, 'slug')) {
             return [
-                'id' => $organizer->id(),
+                'id' => (string) $organizer->id(),
                 'slug' => $organizer->slug(),
                 'title' => $organizer->get('title'),
                 'url' => $organizer->url(),
