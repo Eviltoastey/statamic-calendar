@@ -32,3 +32,27 @@ test('OccurrenceData can be created from array and serialized back', function ()
     expect($occurrence->tags)->toBe(['music']);
     expect($array['id'])->toBe('abc-123-2026-03-06-150000');
 });
+
+test('OccurrenceData normalizes numeric ids to strings', function () {
+    $occurrence = OccurrenceData::fromArray([
+        'id' => '1-2026-03-06-150000',
+        'entry_id' => 1,
+        'title' => 'Numeric IDs',
+        'slug' => 'numeric-ids',
+        'teaser' => null,
+        'organizer_id' => 2,
+        'organizer_slug' => null,
+        'organizer_title' => null,
+        'organizer_url' => null,
+        'tags' => [],
+        'start' => '2026-03-06T15:00:00+00:00',
+        'end' => null,
+        'is_all_day' => false,
+        'is_recurring' => false,
+        'recurrence_description' => null,
+        'url' => '/events/numeric-ids',
+    ]);
+
+    expect($occurrence->entryId)->toBe('1')
+        ->and($occurrence->organizerId)->toBe('2');
+});
