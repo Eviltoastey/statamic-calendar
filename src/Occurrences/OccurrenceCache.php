@@ -62,8 +62,10 @@ class OccurrenceCache
     /**
      * @return Collection<int, OccurrenceData>
      */
-    public function forOrganizer(?string $organizerId): Collection
+    public function forOrganizer(string|int|null $organizerId): Collection
     {
+        $organizerId = $organizerId !== null ? (string) $organizerId : null;
+
         return $this->all()->filter(
             fn (OccurrenceData $o) => $o->organizerId === $organizerId
         )->values();
@@ -187,8 +189,8 @@ class OccurrenceCache
             return $nullOrganizer;
         }
 
-        if (is_string($organizer)) {
-            $organizer = Entry::find($organizer);
+        if (is_string($organizer) || is_int($organizer)) {
+            $organizer = Entry::find((string) $organizer);
             if (! $organizer) {
                 return array_merge($nullOrganizer, ['id' => (string) $entry->get((string) $handle)]);
             }

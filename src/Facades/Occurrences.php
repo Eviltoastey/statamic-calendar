@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static Collection<int, OccurrenceData> on(Carbon $date)
  * @method static Collection<int, OccurrenceData> between(Carbon $from, Carbon $to)
  * @method static Collection<int, OccurrenceData> forEntry(string|int $entryId)
- * @method static Collection<int, OccurrenceData> forOrganizer(?string $organizerId)
+ * @method static Collection<int, OccurrenceData> forOrganizer(string|int|null $organizerId)
  * @method static Collection<int, OccurrenceData> upcoming(int $limit = 10)
  * @method static void rebuild()
  * @method static void clear()

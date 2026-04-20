@@ -56,7 +56,7 @@ class Calendar extends Tags
             $entryId = $entryId->value();
         }
 
-        $entry = is_string($entryId) ? Entry::find($entryId) : null;
+        $entry = (is_string($entryId) || is_int($entryId)) ? Entry::find((string) $entryId) : null;
 
         if (! $entry || ! $dateString) {
             return '';
@@ -89,7 +89,7 @@ class Calendar extends Tags
         $limit = $this->params->int('limit', 5);
         $from = Carbon::now();
 
-        return Occurrences::forOrganizer(is_string($organizerId) ? $organizerId : null)
+        return Occurrences::forOrganizer((is_string($organizerId) || is_int($organizerId)) ? (string) $organizerId : null)
             ->filter(fn (OccurrenceData $o) => $o->start->gte($from))
             ->sortBy(fn (OccurrenceData $o) => $o->start)
             ->take($limit)
@@ -175,7 +175,7 @@ class Calendar extends Tags
     public function nextOccurrences(): array
     {
         $entryId = $this->params->get('entry') ?? $this->context->get('id');
-        $entry = is_string($entryId) ? Entry::find($entryId) : null;
+        $entry = (is_string($entryId) || is_int($entryId)) ? Entry::find((string) $entryId) : null;
 
         if (! $entry) {
             return [];
