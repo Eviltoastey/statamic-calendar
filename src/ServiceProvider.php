@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace ElSchneider\StatamicCalendar;
 
+use ElSchneider\StatamicCalendar\Api\DefaultOccurrenceTransformer;
 use ElSchneider\StatamicCalendar\Console\Commands\RebuildOccurrenceCacheCommand;
+use ElSchneider\StatamicCalendar\Contracts\OccurrenceTransformer;
 use ElSchneider\StatamicCalendar\Http\Controllers\ApiOccurrenceController;
 use ElSchneider\StatamicCalendar\Http\Controllers\IcsController;
 use ElSchneider\StatamicCalendar\Listeners\RebuildOccurrenceCacheOnEntryChange;
@@ -36,6 +38,12 @@ class ServiceProvider extends AddonServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/statamic-calendar.php', 'statamic-calendar');
 
         $this->app->singleton(OccurrenceCache::class);
+
+        $this->app->singleton(OccurrenceTransformer::class, function () {
+            $class = config('statamic-calendar.api.transformer');
+
+            return $class ? app($class) : new DefaultOccurrenceTransformer();
+        });
     }
 
     public function bootAddon()
@@ -78,8 +86,10 @@ class ServiceProvider extends AddonServiceProvider
         $route = config('statamic-calendar.api.route', 'api/calendar/occurrences');
         $middleware = config('statamic-calendar.api.middleware', 'api');
 
+        $controller = config('statamic-calendar.api.controller', ApiOccurrenceController::class);
+
         Route::middleware($middleware)
-            ->get($route, [ApiOccurrenceController::class, 'index'])
+            ->get($route, [$controller, 'index'])
             ->name('statamic-calendar.api.occurrences');
     }
 

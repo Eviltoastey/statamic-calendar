@@ -124,6 +124,18 @@ return [
         'enabled' => env('STATAMIC_CALENDAR_API_ENABLED', false),
         'route' => env('STATAMIC_CALENDAR_API_ROUTE', 'api/calendar/occurrences'),
         'middleware' => env('STATAMIC_CALENDAR_API_MIDDLEWARE', 'api'),
+
+        /*
+        | FQCN of a class implementing OccurrenceTransformer.
+        | When null the default transformer is used (returns OccurrenceData::toArray()).
+        */
+        'transformer' => null,
+
+        /*
+        | FQCN of a controller class with an index() method.
+        | When null the built-in ApiOccurrenceController is used.
+        */
+        'controller' => null,
     ],
 
     /*
